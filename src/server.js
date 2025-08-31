@@ -5,7 +5,24 @@ const connectDB = require("./config/db");
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://highway-delite-frontend-three.vercel.app"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 app.get("/", (_req, res) => res.send("API OK"));
@@ -13,8 +30,13 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/notes", require("./routes/noteRoutes"));
 
 const start = async () => {
-  await connectDB();
-  const port = process.env.PORT || 5000;
-  app.listen(port, () => console.log(`Server on http://localhost:${port}`));
+  try {
+    await connectDB();
+    const port = process.env.PORT || 5000;
+    app.listen(port, () => console.log(`Server running on port ${port}`));
+  } catch (err) {
+    console.error("Server start error:", err.message);
+    process.exit(1);
+  }
 };
 start();
